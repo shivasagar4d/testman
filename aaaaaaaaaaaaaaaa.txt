@@ -1,0 +1,117 @@
+<dashboard>
+
+<label>Siva dashboard</label>
+
+<row>
+
+<panel>
+
+<table>
+
+<search>
+
+<query>index=_* OR index=* sourcetype=message | stats count by status</query>
+
+<sampleRatio>1</sampleRatio>
+
+</search>
+
+<option name="count">20</option>
+
+<option name="dataOverlayMode">none</option>
+
+<option name="percentagesRow">false</option>
+
+<option name="rowNumbers">false</option>
+
+<option name="totalsRow">false</option>
+
+<option name="wrap">true</option>
+
+<option name="drilldown">row</option>
+
+<drilldown>
+
+<condition match="match('click.value', &quot;Fail&quot;)">
+
+<set token="myquery">index=test sourcetype=message status="Fail" | stats count by src_ip</set>
+
+</condition>
+
+<condition match="match('click.value', &quot;Info&quot;)">
+
+<set token="myquery">index=test sourcetype=message | eval message="You have clicked other than Fail action" | dedup message | table message</set>
+
+</condition>
+
+</drilldown>
+
+</table>
+
+</panel>
+
+<panel depends="$myquery$">
+
+<table>
+
+<search>
+
+<query>$myquery$</query>
+
+<sampleRatio>1</sampleRatio>
+
+</search>
+
+<option name="count">20</option>
+
+<option name="dataOverlayMode">none</option>
+
+<option name="percentagesRow">false</option>
+
+<option name="rowNumbers">false</option>
+
+<option name="totalsRow">false</option>
+
+<option name="wrap">true</option>
+
+<drilldown>
+
+<set token="srcip">$row.src_ip$</set>
+
+</drilldown>
+
+</table>
+
+</panel>
+
+<panel depends="$srcip$">
+
+<table>
+
+<search>
+
+<query>index=test sourcetype=message src_ip="$srcip$" AND status="Fail" | rex "messageString\&gt;(?P&lt;errormessage&gt;[^\&lt;]*)\&lt;\/message" max_match=0 | stats values(errormessage) AS ErrorMessage by src_ip</query>
+
+<sampleRatio>1</sampleRatio>
+
+</search>
+
+<option name="count">20</option>
+
+<option name="dataOverlayMode">none</option>
+
+<option name="percentagesRow">false</option>
+
+<option name="rowNumbers">false</option>
+
+<option name="totalsRow">false</option>
+
+<option name="wrap">true</option>
+
+</table>
+
+</panel>
+
+</row>
+
+</dashboard>
