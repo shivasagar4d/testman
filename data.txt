@@ -1,26 +1,94 @@
+import urllib
+import xml.etree.ElementTree as ET
+import os, sys,shlex, subprocess,datetime
+import xml.parsers.expat
+import re
 
-%3C%3Fxml%2Bversion%3D%221.0%22%2Bencoding%3D%22UTF-8%22%2Bstae%3D%22yes%22%3F%3E%3CTransRecord%3E%3CLogRecordType%3E1%3C%2FLogRecordType%3E%3CSessionID%3E112345665%3C%2FSessionID%3E%3CServerID%3Eabc1.com%3C%2FServerID%3E%0A%3CSessionStartDateTime%3E20160127235946%3C%2FSessionStartDateTime%3E%3CBusinessCode%3EUScode1%3C%2FBusinessCode%3E%3CRelationshipcode%3ERcode1%3C%2FRelationshipcode%3E%0A%3CCompletionStatus%3E4%3C%2FCompletionStatus%3E%3CSessionEndDateTime%3E20160127288946%3C%2FSessionEndDateTime%3E%3CClientIPAddress%3E000.00.000.00%3C%2FClientIPAddress%3E%3CClientPlatform%3EMozilla%3C%2FClientPlatform%3E%0A%3C%2FTransRecord%3E
+var_input_data=datetime.datetime.now().time()
+print (var_input_data)
 
-<?xml+version="1.0"+encoding="UTF-8"+stae="yes"?><TransRecord><LogRecordType>1</LogRecordType><SessionID>112345665</SessionID><ServerID>abc1.com</ServerID>
-<SessionStartDateTime>20160127235946</SessionStartDateTime><BusinessCode>UScode1</BusinessCode><Relationshipcode>Rcode1</Relationshipcode>
-<CompletionStatus>4</CompletionStatus><SessionEndDateTime>20160127288946</SessionEndDateTime><ClientIPAddress>000.00.000.00</ClientIPAddress><ClientPlatform>Mozilla</ClientPlatform>
-</TransRecord>
+Command_Line_Argument_List=sys.argv
+Input_File=str(Command_Line_Argument_List[1])
+Reject_File=str(Command_Line_Argument_List[2])
 
-%3C%3Fxml%2Bversion%3D%221.0%22%2Bencoding%3D%22UTF-8%22%2Bstae%3D%22yes%22%3F%3E%3CTransRecord%3E%3CLogRecordType%3E2%2FLogRecordType%3E%3CServerID%3Eabc2.com%3C%2FServerID%3E%3CPrinterId%3EP001%3C%2FPrinterId%3E%3CPrinterCode%3EPcode%3C%2FPrinterCode%3E%3CPrinterLocation%3Eploc%3C%2FPrinterLocation%3E%3C%2FTransRecord%3E
+def strip_control_characters_data(input):
+    if input:
+        #import re
+        # unicode invalid characters
+        RE_XML_ILLEGAL = u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])' + \
+                         u'|' + \
+                         u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
+                          (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+                           unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+                           unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+                           )
+        input = re.sub(RE_XML_ILLEGAL, "", input)
+        # ascii control characters
+        input =re.sub(r"[\x01-\x1F\x7F]", " ", input)
+        input=input.replace(" ","\n")
+        input=re.sub(r'(\n\s*)+\n', '\n',input)
+        input=re.sub(r"\+"," ",input).replace(",","").replace("&","").replace("|","-").lower()
+    return str(input)
 
+Uniq_XML_TAG_List_Data=[]
+Input_Config_File=open('/home/Uniq_hdr.config','rt')
+Uniq_XML_TAG_List_Data=Input_Config_File.readlines()
+Input_Config_File.close()
+i=0
+Rejcet_Record_File_Data=open(Reject_File,'wb')
+Input_File_Open=open(Input_File,'rt')
+#Input_File_Lines=Input_File_Open.readlines()[1: ]
+Input_File_Lines=Input_File_Open.readlines()
+for line in Input_File_Lines:
+   i=i+1
+   #print i
+   Var_Line=line.rstrip('\n').split(';')
+   url=Var_Line[8]
+   Input_Xml=urllib.unquote(url).decode('utf8')
+   xml_string_clean=strip_control_characters_data(Input_Xml)
+   xml_string=xml_string_clean[1: ]
+   #print xml_string
+   try:
+     root=ET.fromstring(xml_string)
+     length_of_element=len(root)
+     #print length_of_element
+     xml_tag_dict={}
+     xml_tag_dict['root_header']=root.tag
+      #if root.tag=='log':
+     if length_of_element in[1,3]:
+       for child in root:
+          xml_tag_dict[child.tag]=child.text
+          #print child.tag,child.text
+          for subchild in child:
+            xml_tag_dict[subchild.tag]=subchild.text
+            for supersubchild in subchild:
+              #print supersubchild.tag,supersubchild.text
+              xml_tag_dict[supersubchild.tag]=supersubchild.text
+     else:
+       for child in root:
+          xml_tag_dict[child.tag]=child.text
 
-<?xml+version="1.0"+encoding="UTF-8"+stae="yes"?><TransRecord><LogRecordType>2/LogRecordType><ServerID>abc2.com</ServerID><PrinterId>P001</PrinterId><PrinterCode>Pcode</PrinterCode><PrinterLocation>ploc</PrinterLocation></TransRecord>
+     #print xml_tag_dict
+     
+     xml_tag_value_list=[]
+     for line in Uniq_XML_TAG_List_Data:
+       line_var=line.replace('\n','').replace("'","")
+       #print line_var
+       if  line_var in xml_tag_dict.keys():
+           xml_tag_value_list.append(xml_tag_dict[line_var])
+       else:
+         Var=""
+         xml_tag_value_list.append(Var)
 
+     #print xml_tag_value_list 
+     print str(Var_Line[0:8]+xml_tag_value_list).replace("[","").replace("]","").replace(",","|").replace("'","")
+     
+   except Exception as e:
+     #print "Record:%d,XML NOT well-formed!%s" %(i,e)
+     Rejcet_Record_File_Data.writelines(str(i)+":"+str(e)+"\n"+xml_string+"\n"+"________________"+"\n")
+     pass
+Input_File_Open.close()
+Rejcet_Record_File_Data.close()
 
-
-
-%3C%3Fxml%2Bversion%3D%221.0%22%2Bencoding%3D%22UTF-8%22%2Bstae%3D%22yes%22%3F%3E%3Clog%3E%3CLogRecordType%3E3%3C%2FLogRecordType%3E%3CTransId%3ET001%3C%2FTransId%3E%3CTransCode%3ETcode%3C%2FTransCode%3E%3C%2Flog%3E
-
-<?xml+version="1.0"+encoding="UTF-8"+stae="yes"?><log><LogRecordType>3</LogRecordType><TransId>T001</TransId><TransCode>Tcode</TransCode></log>
-
-rootelement;businesscode;clientipaddress;clientplatform;completionstatus;logrecordtype;printercode;printerid;printerlocation;relationshipcode;serverid;
-sessionenddatetime;sessionid;sessionstartdatetime;transcode;transid
-
-TransRecord|UScode1|000.00.000.00|Mozilla|4|2|none|none|none|Rcode1|abc1.com|20160127288946|112345665|20160127235946|none|none
-TransRecord|none|none|none|none|2|Pcode|P001|ploc|none|abc2.com|none|none|none|none|none
-log|none|none|none|none|3|none|none|none|none|none|none|none|none|Tcode|T001
+var_input_data=datetime.datetime.now().time()
+print (var_input_data)
