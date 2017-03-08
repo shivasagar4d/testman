@@ -1,0 +1,39 @@
+Dev Environment is set up with the following technologies
+java: 1.7.0_95
+spark: 1.6.0
+scala version :2.10.5
+So we need to  use the technology versions compatible with the above versions to create the scala jar file. If you use the current versions for creating the jar, it will not work.
+I have installed the java 1.7.0_80
+Compatible sbt version 0.13.7
+I have used the lower version of intellijidea version Intellij IDEA 15.0.6 (if you use Intellij IDEA 2016 that jar is not going to work in the dev environment.)
+Through you have selected the all the plugins at the installation if Intellij IDEA. Still you need to go to File?Settings?Plugins? click on Install Jetbrains Plugin then click enter
+Type scala on the search box, results will be displayed. Install scala and also sbt plugins here.
+First add the scalaversion and the library dependencies to the build.sbt file
+scalaVersion := "2.10.5"
+libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.6.2"
+libraryDependencies += "org.apache.spark" % "spark-sql_2.10" % "1.6.2"
+libraryDependencies += "org.apache.spark" % "spark-hive_2.10" % "1.6.2"
+
+Then compile. It will create the project structure and add all the dependent libraries to the External libraries folder. Then add the scala object file projectname?src?main?Scala folder. Add the required code the scala file and create the jar file. 
+Upload this jar file to the Dev environment using file zilla or winscp tools.
+Login to the dev environment. Execute below command
+Cd /opt/cloudera/parcels/CDH-5.7.1-1.cdh5.7.1.p1829.1855/lib/spark/bin
+Execute the below command to clean the meta files. If you don’t execute this the jar file will not work.
+zip -d /home/gb15988/cppd4.jar META-INF/*.RSA META-INF/*.DSA META-INF/*.SF
+Then execute the below command to execute the jar file.
+./spark-submit --master local --class cppdquery4 /home/gb15988/cppd4.jar
+
+
+Below is the spark jar with case_activity_p_one table (single record for each case id with max(case_edit_date) )
+zip -d /home/gb15988/CppdSingle4.jar META-INF/*.RSA META-INF/*.DSA META-INF/*.SF
+./spark-submit --master local --class cppdsinglequery /home/gb15988/CppdSingle4.jar
+
+If you are using python for spark. You can run the commands at your user directory with the commad pyspark opens the shell. You can execute the pyspark commands.
+File ? project structure ? Project (select java version)
+ 
+
+File ? project structure ?Artifacts? click on + sign?JAR?From modules with dependencies
+Then select the scala file. Change the manifest directory to projectname\src\main\resources\META-INF\MANIFEST.MF.  It will add the jar file. Select the jar file properties and folder structure like screen shot below the output directory projectname \cppd4\target. Donot forget to click on Build on make ( this name is different in 2016 version if you don’t select this jar file is not created). Click on preprocessing and post processing change the output directory path to projectname \cppd4\target
+
+ 
+
