@@ -1,0 +1,275 @@
+<form>
+  <label>Cognos- RT Job Analysis_Dropdown</label>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="link" token="unused">
+      <label>Choose a view</label>
+      <choice value="table">Table</choice>
+      <choice value="chart">Chart</choice>
+      <!--  <choice value="map">Map</choice> -->
+      <default>Table</default>
+      <change>
+        <condition value="table">
+          <set token="showTable">true</set>
+          <unset token="showChart"></unset>
+          <unset token="showMap"></unset>
+        </condition>
+        <condition value="chart">
+          <set token="showChart">true</set>
+          <unset token="showTable"></unset>
+          <unset token="showMap"></unset>
+        </condition>
+        <condition value="map">
+          <set token="showMap">true</set>
+          <unset token="showChart"></unset>
+          <unset token="showTable"></unset>
+        </condition>
+      </change>
+    </input>
+    <input type="dropdown" token="Span" searchWhenChanged="true">
+      <showClearButton>false</showClearButton>
+      <label>Hours</label>
+      <default>1</default>
+      <choice>1</choice>
+      <choice>2</choice>
+      <choice>4</choice>
+      <choice>8</choice>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>#Trend Analysis</title>
+      <single depends="$showTable$">
+        <title># Jobs</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" | search runcode="" OR runcode=Run OR runcode=Warning OR runcode=Success 
+                  OR runcode=Failure |eval status11 =1 |bin _time span=$Span$h 
+                | stats sum(status11) AS perHour_a by _time 
+                | reverse 
+                |  timechart span=$Span$h values(perHour_a) as perHour_b sum(perHour_a) AS perHour_c</query>
+          <earliest>-60h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- <option name="trendDisplayMode">percent</option> -->
+        <!-- <option name="numberPrecision">0.00</option>
+        <option name="unit">$</option> -->
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">143</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendInterval">-1h</option>
+        <option name="underLabel">compared to 1 hour before</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single depends="$showTable$">
+        <title># Running Status</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)"|search runcode=Run| eval runcode11 =1|bin _time span=$Span$h 
+                | stats sum(runcode11) AS perHour11 by _time 
+                | reverse 
+                | timechart span=$Span$h sum(perHour11) AS Total11</query>
+          <earliest>-60h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- <option name="trendDisplayMode">percent</option> -->
+        <!-- <option name="numberPrecision">0.00</option>
+        <option name="unit">$</option> -->
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">143</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendInterval">-1h</option>
+        <option name="underLabel">compared to 1 hour before</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single depends="$showTable$">
+        <title># Warning Messages</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=Warning| eval runcode16 =1|bin _time span=$Span$h 
+                | stats sum(runcode16) AS perHour16 by _time 
+                | reverse 
+                | timechart span=$Span$h sum(perHour16) AS Total6</query>
+          <earliest>-20d</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- <option name="trendDisplayMode">percent</option> -->
+        <!-- <option name="numberPrecision">0.00</option>
+        <option name="unit">$</option> -->
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">143</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendInterval">-1h</option>
+        <option name="underLabel">compared to 1 hour before</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single depends="$showTable$">
+        <title># No Status code</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=""| eval runcode14 =1|bin _time span=$Span$h 
+                | stats sum(runcode14) AS perHour14 by _time 
+                | reverse 
+                | timechart span=$Span$h sum(perHour14) AS Total4</query>
+          <earliest>-60h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- <option name="trendDisplayMode">percent</option> -->
+        <!-- <option name="numberPrecision">0.00</option>
+        <option name="unit">$</option> -->
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">143</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendInterval">-1h</option>
+        <option name="underLabel">compared to 1 hour before</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single depends="$showTable$">
+        <title># Completed</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=Success| eval runcode14 =1|bin _time span=$Span$h 
+                | stats sum(runcode14) AS perHour14 by _time 
+                | reverse 
+                | timechart span=$Span$h sum(perHour14) AS Total4</query>
+          <earliest>-60h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>30s</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <!-- <option name="trendDisplayMode">percent</option> -->
+        <!-- <option name="numberPrecision">0.00</option>
+        <option name="unit">$</option> -->
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">143</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendInterval">-1h</option>
+        <option name="underLabel">compared to 1 hour before</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <single depends="$showTable$">
+        <title># Failed</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=Failure| eval runcode15 =1|bin _time span=$Span$h 
+                | stats sum(runcode15) AS perHour15 by _time 
+                | reverse 
+                | timechart span=$Span$h sum(perHour15) AS Total5</query>
+          <earliest>-20d</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- <option name="trendDisplayMode">percent</option> -->
+        <!-- <option name="numberPrecision">0.00</option>
+        <option name="unit">$</option> 
+        <option name="colorBy">trend</option> <option name="linkView">YourSecondDashboard</option>   -->
+        <option name="colorBy">trend</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="height">143</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendInterval">-1h</option>
+        <option name="underLabel">compared to 1 hour before</option>
+        <option name="unitPosition">before</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+      <table depends="$showTable$">
+        <title>Failure by Dispatcher's</title>
+        <search>
+          <query>index=cognosstreaming earliest=-$Span$h@h latest=+0h|rex "^(?P&lt;Dispatcher&gt;[^\t]*)" | eval Dispatcher=replace (Dispatcher,"\[","") |eval Dispatcher=replace (Dispatcher,"\]","")| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=Success| stats count by Dispatcher</query>
+          <earliest>rt-1h</earliest>
+          <latest>rtnow</latest>
+          <!-- <query>index=cognosstreaming|rex "^(?P&lt;Dispatcher&gt;[^\t]*)" | eval Dispatcher=replace (Dispatcher,"\[","") |eval Dispatcher=replace (Dispatcher,"\]","")| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=Success| stats count by Dispatcher</query>
+           <earliest>-3h</earliest>
+          <latest>now</latest> -->
+        </search>
+        <drilldown>
+          <set token="Dispatcher">$row.Dispatcher$</set>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$Dispatcher$">
+      <title>Error Messages by Dispatcher- $Dispatcher$</title>
+      <table depends="$showTable$">
+        <search>
+          <query>index=cognosstreaming|rex "^(?P&lt;Dispatcher&gt;[^\t]*)" | eval Dispatcher=replace (Dispatcher,"\[","") |eval Dispatcher=replace (Dispatcher,"\]","")| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" | rex "(?:[^\t\n]*\t){17}(?P&lt;reasoncode&gt;[^\t]*)" | rex max_match=0 "&lt;messageString&gt;(?&lt;reasoncode&gt;[^\\&lt;\"]*)" | eval ErrorMessage=if(reasoncode=="","Note to Admin Team: Missing Detalied Error Message",reasoncode)| search runcode=Failure Dispatcher="$Dispatcher$" 
+           | stats count by ErrorMessage|sort - count</query>
+          <earliest>-$Span$h@m</earliest>
+          <latest>$Span.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart depends="$showChart$">
+        <title># With Different Run Status Codes</title>
+        <search>
+          <query>index=cognosstreaming| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |eval statuscode=if(runcode=="","Blank-No Status code found",runcode)
+                |search statuscode="Blank-No Status code found" OR statuscode=Run OR statuscode=Warning OR statuscode=Success OR statuscode=Failure
+                |timechart count by statuscode</query>
+          <earliest>$Span$h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.drilldown">none</option>
+        <drilldown>
+          <set token="Dispatcher">$row.Dispatcher$</set>
+        </drilldown>
+      </chart>
+      <chart depends="$showChart$">
+        <title>Failure by Dispatcher's</title>
+        <search>
+          <query>index=cognosstreaming|rex "^(?P&lt;Dispatcher&gt;[^\t]*)" | eval Dispatcher=replace (Dispatcher,"\[","") |eval Dispatcher=replace (Dispatcher,"\]","")| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" |search runcode=Failure|stats count by Dispatcher</query>
+          <earliest>$Span$h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <drilldown>
+          <set token="Dispatcher">$row.Dispatcher$</set>
+          <set token="form.Dispatcher">$row.Dispatcher$</set>
+        </drilldown>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$Dispatcher$">
+      <chart depends="$showChart$">
+        <title>Error Messages by Dispatcher- $Dispatcher$</title>
+        <search>
+          <query>index=cognosstreaming|rex "^(?P&lt;Dispatcher&gt;[^\t]*)" | eval Dispatcher=replace (Dispatcher,"\[","") |eval Dispatcher=replace (Dispatcher,"\]","")| rex "(?:[^\t\n]*\t){16}(?P&lt;runcode&gt;[^\t]*)" | rex "(?:[^\t\n]*\t){17}(?P&lt;reasoncode&gt;[^\t]*)" | rex max_match=0 "&lt;messageString&gt;(?&lt;reasoncode&gt;[^\\&lt;\"]*)" | eval ErrorMessage=if(reasoncode=="","Note to Admin Team: Missing Detalied Error Message",reasoncode)| search runcode=Failure Dispatcher="$Dispatcher$" 
+           | stats count by ErrorMessage|sort - count</query>
+          <earliest>$Span$h</earliest>
+          <latest>now</latest>
+        </search>
+      </chart>
+    </panel>
+  </row>
+</form>
