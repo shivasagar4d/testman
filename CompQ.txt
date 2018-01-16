@@ -1,0 +1,80 @@
+
+Hi All,
+
+Input Data from Hive tables
+
+Three Tables : TableA, TableB, TableC
+
+Hive SQL to find string match records:
+
+select a.col1,a.col2,NVL(a.comment_1,b.comment_2) as comment,b.col1,b.col2,c.col1
+from
+    tableA a
+        Join
+    tableB b
+        on a.common = b.common
+        LEFT Join 
+    TableC c
+        on b.common = c.common
+Where 
+UPPER(NVL(a.comment_1,b.comment_2)) like '%GOLD%' OR
+UPPER(NVL(a.comment_1,b.comment_2)) like '%SILVER%' OR
+UPPER(NVL(a.comment_1,b.comment_2)) like '%BRASS%' OR
+UPPER(NVL(a.comment_1,b.comment_2)) like '%PART%' 
+
+
+Inserted of Hard Coding strings in Hive SQL, I will provide search string in CSV file and need to search in hive table using SPARK  
+
+
+String Search In csv file:
+gold
+silver
+brass
+part
+
+
+
+
+
+
+Hi,
+
+Below is the initial code i have written. Did not got much time to work on it. I will try to complete testing tomorrow and send you the complete it.
+
+Mean while review the code and provide your suggestions.
+
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SQLContext
+
+object HiveJoin {
+  def main(args: Array[String]) {
+    if (args.length < 1) {
+      println("provide correct number of arguments");
+    }
+
+    val inputFile = args(0)
+    val database = args(1)
+    val firstTableName = args(2)
+    val secondTableName = args(3)
+    val thirdTableName = args(4)
+    val conf = new SparkConf.setAppName("HiveJoin").setMaster("local")
+    val sc = new SparkContext(conf)
+    val sqlContext = new SQLContext(sc);
+    
+    val inputRdd = sc.textFile(inputFile);
+    val filterCondition = inputRdd.collect();
+
+    val firstdf = sqlContext.sql(s"select * from $database.$firstTableName")
+    val seconddf = sqlContext.sql(s"select * from $database.$secondTableName")
+    val thirddf = sqlContext.sql(s"select * from $database.$thirdTableName")
+
+    val joinResult = firstdf.join(seconddf, Seq("common")).join(thirddf, Seq("common"), "left_outer")
+
+    val resultdf = joinResult.select(firstdf("col1"), firstdf("col2"), seconddf("col1"), thirddf("col1"))
+                    .where(firstdf("comment_1").like("%GOLD%") || firstdf("comment_1").like(filterCondition(1)) || firstdf("comment_1").like(filterCondition(2)) || firstdf("comment_1").like(filterCondition(3)))
+
+     resultdf.show()
+  }
+}
+
